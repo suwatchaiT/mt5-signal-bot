@@ -1,7 +1,7 @@
 import time
 import logging
 import config
-import mt5_connector as mt5_conn
+import data_feed
 import signals as sig_detector
 import notifier
 
@@ -30,14 +30,9 @@ def should_send(signal: sig_detector.Signal) -> bool:
 
 
 def run():
-    log.info("Connecting to MT5...")
-    if not mt5_conn.connect():
-        log.error("MT5 connection failed. Check credentials and that MT5 is running.")
-        return
-
-    log.info("MT5 connected. Monitoring: %s on %s", config.SYMBOLS, config.TIMEFRAME)
+    log.info("Monitoring: %s on %s", config.SYMBOLS, config.TIMEFRAME)
     notifier.send_text(
-        f"🤖 <b>MT5 Signal Bot started</b>\n"
+        f"🤖 <b>Signal Bot started</b>\n"
         f"Symbols: {', '.join(config.SYMBOLS)}\n"
         f"Timeframe: {config.TIMEFRAME}"
     )
@@ -45,7 +40,7 @@ def run():
     try:
         while True:
             for symbol in config.SYMBOLS:
-                df = mt5_conn.get_rates(symbol)
+                df = data_feed.get_rates(symbol)
                 if df is None or len(df) < 50:
                     log.warning("Not enough data for %s, skipping.", symbol)
                     continue
@@ -62,9 +57,7 @@ def run():
 
     except KeyboardInterrupt:
         log.info("Bot stopped by user.")
-        notifier.send_text("🛑 MT5 Signal Bot stopped.")
-    finally:
-        mt5_conn.disconnect()
+        notifier.send_text("🛑 Signal Bot stopped.")
 
 
 if __name__ == "__main__":
