@@ -8,6 +8,7 @@ import logging
 import time
 from pathlib import Path
 
+import bot_commands
 import config
 import data_feed
 import notifier
@@ -51,6 +52,8 @@ def main():
                 sent += 1
             else:
                 log.warning("Telegram send failed for %s", key)
+
+    bot_commands.handle_commands(state)
 
     STATE_FILE.write_text(json.dumps(state))
     log.info("Check complete. Alerts sent: %d", sent)
