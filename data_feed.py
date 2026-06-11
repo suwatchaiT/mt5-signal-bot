@@ -38,8 +38,8 @@ def yahoo_ticker(symbol: str) -> str:
     return _SYMBOL_MAP.get(symbol.upper(), symbol)
 
 
-def get_rates(symbol: str, count: int = 200) -> pd.DataFrame | None:
-    interval, period = _TIMEFRAME_MAP.get(config.TIMEFRAME, ("1h", "40d"))
+def get_rates(symbol: str, count: int = 200, timeframe: str | None = None) -> pd.DataFrame | None:
+    interval, period = _TIMEFRAME_MAP.get(timeframe or config.TIMEFRAME, ("1h", "40d"))
     try:
         df = yf.download(
             yahoo_ticker(symbol),

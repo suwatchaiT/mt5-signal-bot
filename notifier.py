@@ -48,9 +48,37 @@ def send(signal: Signal) -> bool:
     }
     try:
         r = requests.post(url, json=payload, timeout=10)
-        return r.status_code == 200
+        ok = r.status_code == 200
     except requests.RequestException:
         return False
+
+    if ok:
+        _send_chart(signal)
+    return ok
+
+
+def _send_chart(signal: Signal) -> None:
+    """Follow the alert with an M15 chart image. Best-effort."""
+    try:
+        import chart
+        png = chart.render(signal)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("Chart render failed: %s", e)
+        return
+    if not png:
+        return
+    url = f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendPhoto"
+    try:
+        requests.post(
+            url,
+            data={"chat_id": config.TELEGRAM_CHAT_ID,
+                  "caption": f"{signal.symbol} M15 — last 24h"},
+            files={"photo": (f"{signal.symbol}_m15.png", png, "image/png")},
+            timeout=30,
+        )
+    except requests.RequestException:
+        pass
 
 
 def send_text(text: str) -> bool:
