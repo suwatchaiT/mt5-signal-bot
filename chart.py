@@ -48,11 +48,6 @@ def render(signal: Signal) -> bytes | None:
     ax.plot(x, _ema(close, config.MA_SLOW), label=f"EMA{config.MA_SLOW}",
             color="#ff6d00", linewidth=1.2)
 
-    # Trend line: linear regression over the charted window
-    slope, intercept = np.polyfit(x, close, 1)
-    ax.plot(x, slope * x + intercept, "--", color="#9e9e9e", linewidth=1.4,
-            label=f"Trend ({'up' if slope > 0 else 'down'})")
-
     # SL/TP levels from the signal
     if signal.sl and signal.tp:
         ax.axhline(signal.tp, color="#26a69a", linewidth=1, linestyle=":", label=f"TP {signal.tp:.5f}")
