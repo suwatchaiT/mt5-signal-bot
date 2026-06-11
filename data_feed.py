@@ -59,7 +59,7 @@ def get_rates(symbol: str, count: int = 200) -> pd.DataFrame | None:
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
 
-    df = df.rename(columns=str.lower).reset_index()
+    df = df.reset_index().rename(columns=str.lower)
     df = df.rename(columns={"datetime": "time", "date": "time"})
     df = df.dropna(subset=["close"])
     return df.tail(count).reset_index(drop=True)

@@ -23,5 +23,13 @@ MACD_FAST = int(os.getenv("MACD_FAST", "12"))
 MACD_SLOW = int(os.getenv("MACD_SLOW", "26"))
 MACD_SIGNAL = int(os.getenv("MACD_SIGNAL", "9"))
 
+# ATR-based SL/TP suggestion
+ATR_PERIOD = int(os.getenv("ATR_PERIOD", "14"))
+ATR_SL_MULT = float(os.getenv("ATR_SL_MULT", "1.5"))
+ATR_TP_MULT = float(os.getenv("ATR_TP_MULT", "3.0"))
+
+# Minimum confluence stars (1-3) required to send an alert
+MIN_STARS = int(os.getenv("MIN_STARS", "1"))
+
 # Poll interval in seconds
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))
