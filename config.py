@@ -31,5 +31,9 @@ ATR_TP_MULT = float(os.getenv("ATR_TP_MULT", "3.0"))
 # Minimum confluence stars (1-3) required to send an alert
 MIN_STARS = int(os.getenv("MIN_STARS", "1"))
 
+# How many recent bars to scan for trigger events. Covers gaps between
+# scheduled runs (GitHub may delay cron by hours); cooldown dedupes repeats.
+LOOKBACK_BARS = int(os.getenv("LOOKBACK_BARS", "6"))
+
 # Poll interval in seconds
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))

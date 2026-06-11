@@ -53,31 +53,48 @@ def detect(symbol: str, df: pd.DataFrame) -> list[Signal]:
     macd_line = _ema(close, config.MACD_FAST) - _ema(close, config.MACD_SLOW)
     signal_line = _ema(macd_line, config.MACD_SIGNAL)
 
-    prev_rsi, curr_rsi = float(rsi.iloc[-2]), float(rsi.iloc[-1])
+    curr_rsi = float(rsi.iloc[-1])
 
-    # --- Trigger events (crossovers / zone exits on the latest bar) ---
+    # --- Trigger events: scan the last LOOKBACK_BARS candles, not just the
+    # newest one, because scheduled runs may be hours apart and signals on
+    # intermediate bars would otherwise be missed. Cooldown dedupes repeats.
     triggers: list[tuple[str, str, str]] = []  # (name, direction, description)
 
-    if fast.iloc[-2] < slow.iloc[-2] and fast.iloc[-1] > slow.iloc[-1]:
-        triggers.append(("MA_CROSS", "BUY",
-            f"EMA{config.MA_FAST} crossed above EMA{config.MA_SLOW}"))
-    elif fast.iloc[-2] > slow.iloc[-2] and fast.iloc[-1] < slow.iloc[-1]:
-        triggers.append(("MA_CROSS", "SELL",
-            f"EMA{config.MA_FAST} crossed below EMA{config.MA_SLOW}"))
+    def bar_label(i: int) -> str:
+        if "time" in df.columns and i != -1:
+            return f" (candle {df['time'].iloc[i]})"
+        return ""
 
-    if prev_rsi <= config.RSI_OVERSOLD and curr_rsi > config.RSI_OVERSOLD:
-        triggers.append(("RSI", "BUY", f"RSI exited oversold zone ({curr_rsi:.1f})"))
-    elif prev_rsi >= config.RSI_OVERBOUGHT and curr_rsi < config.RSI_OVERBOUGHT:
-        triggers.append(("RSI", "SELL", f"RSI exited overbought zone ({curr_rsi:.1f})"))
-    elif prev_rsi >= config.RSI_OVERSOLD and curr_rsi < config.RSI_OVERSOLD:
-        triggers.append(("RSI", "SELL", f"RSI entered oversold zone ({curr_rsi:.1f})"))
-    elif prev_rsi <= config.RSI_OVERBOUGHT and curr_rsi > config.RSI_OVERBOUGHT:
-        triggers.append(("RSI", "BUY", f"RSI entered overbought zone ({curr_rsi:.1f})"))
+    for i in range(-config.LOOKBACK_BARS, 0):
+        p, c = i - 1, i  # previous and current bar of this step
 
-    if macd_line.iloc[-2] < signal_line.iloc[-2] and macd_line.iloc[-1] > signal_line.iloc[-1]:
-        triggers.append(("MACD_CROSS", "BUY", "MACD crossed above signal line"))
-    elif macd_line.iloc[-2] > signal_line.iloc[-2] and macd_line.iloc[-1] < signal_line.iloc[-1]:
-        triggers.append(("MACD_CROSS", "SELL", "MACD crossed below signal line"))
+        if fast.iloc[p] < slow.iloc[p] and fast.iloc[c] > slow.iloc[c]:
+            triggers.append(("MA_CROSS", "BUY",
+                f"EMA{config.MA_FAST} crossed above EMA{config.MA_SLOW}{bar_label(c)}"))
+        elif fast.iloc[p] > slow.iloc[p] and fast.iloc[c] < slow.iloc[c]:
+            triggers.append(("MA_CROSS", "SELL",
+                f"EMA{config.MA_FAST} crossed below EMA{config.MA_SLOW}{bar_label(c)}"))
+
+        r_p, r_c = float(rsi.iloc[p]), float(rsi.iloc[c])
+        if r_p <= config.RSI_OVERSOLD and r_c > config.RSI_OVERSOLD:
+            triggers.append(("RSI", "BUY", f"RSI exited oversold zone ({r_c:.1f}){bar_label(c)}"))
+        elif r_p >= config.RSI_OVERBOUGHT and r_c < config.RSI_OVERBOUGHT:
+            triggers.append(("RSI", "SELL", f"RSI exited overbought zone ({r_c:.1f}){bar_label(c)}"))
+        elif r_p >= config.RSI_OVERSOLD and r_c < config.RSI_OVERSOLD:
+            triggers.append(("RSI", "SELL", f"RSI entered oversold zone ({r_c:.1f}){bar_label(c)}"))
+        elif r_p <= config.RSI_OVERBOUGHT and r_c > config.RSI_OVERBOUGHT:
+            triggers.append(("RSI", "BUY", f"RSI entered overbought zone ({r_c:.1f}){bar_label(c)}"))
+
+        if macd_line.iloc[p] < signal_line.iloc[p] and macd_line.iloc[c] > signal_line.iloc[c]:
+            triggers.append(("MACD_CROSS", "BUY", f"MACD crossed above signal line{bar_label(c)}"))
+        elif macd_line.iloc[p] > signal_line.iloc[p] and macd_line.iloc[c] < signal_line.iloc[c]:
+            triggers.append(("MACD_CROSS", "SELL", f"MACD crossed below signal line{bar_label(c)}"))
+
+    # Keep only the most recent trigger per (indicator, direction)
+    seen: dict[tuple[str, str], tuple[str, str, str]] = {}
+    for t in triggers:
+        seen[(t[0], t[1])] = t
+    triggers = list(seen.values())
 
     if not triggers:
         return []

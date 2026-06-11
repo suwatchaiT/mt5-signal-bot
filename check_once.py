@@ -19,7 +19,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger(__name__)
 
 STATE_FILE = Path("state.json")
-COOLDOWN_SECONDS = 3600
+# Must cover the LOOKBACK_BARS scan window, or a trigger already alerted
+# on an old bar would re-alert on the next run.
+COOLDOWN_SECONDS = config.LOOKBACK_BARS * 3600
 
 
 def load_state() -> dict:
