@@ -13,6 +13,7 @@ import config
 import data_feed
 import notifier
 import signals as sig_detector
+import usage_report
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ def main():
                 log.warning("Telegram send failed for %s", key)
 
     bot_commands.handle_commands(state)
+    usage_report.maybe_send_daily_report(state)
 
     STATE_FILE.write_text(json.dumps(state))
     log.info("Check complete. Alerts sent: %d", sent)
