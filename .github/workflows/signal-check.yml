@@ -2,7 +2,11 @@ name: Signal check
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    # Alert window 9:00-17:00 Thailand (UTC+7) = 02:00-10:00 UTC
+    - cron: "*/15 2-9 * * *"
+    - cron: "0 10 * * *"
+    # Daily status report at 8:30 Thailand = 01:30 UTC
+    - cron: "30 1 * * *"
   workflow_dispatch:
 
 concurrency:

@@ -33,10 +33,23 @@ def load_state() -> dict:
     return {}
 
 
+def in_alert_window() -> bool:
+    local_hour = (time.gmtime().tm_hour + config.TZ_OFFSET) % 24
+    return config.ALERT_START_HOUR <= local_hour <= config.ALERT_END_HOUR
+
+
 def main():
     state = load_state()
     now = time.time()
     sent = 0
+
+    if not in_alert_window():
+        log.info("Outside alert window (%d:00-%d:00 local) — skipping signal checks.",
+                 config.ALERT_START_HOUR, config.ALERT_END_HOUR)
+        bot_commands.handle_commands(state)
+        usage_report.maybe_send_daily_report(state)
+        STATE_FILE.write_text(json.dumps(state))
+        return
 
     for symbol in config.SYMBOLS:
         df = data_feed.get_rates(symbol)

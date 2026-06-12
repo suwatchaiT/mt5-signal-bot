@@ -31,6 +31,13 @@ ATR_TP_MULT = float(os.getenv("ATR_TP_MULT", "3.0"))
 # Minimum confluence stars (1-3) required to send an alert
 MIN_STARS = int(os.getenv("MIN_STARS", "1"))
 
+# Alert window in local time (TZ_OFFSET hours from UTC). Alerts are only
+# sent between ALERT_START_HOUR and ALERT_END_HOUR; /status and the daily
+# report still work outside the window.
+TZ_OFFSET = int(os.getenv("TZ_OFFSET", "7"))  # Thailand
+ALERT_START_HOUR = int(os.getenv("ALERT_START_HOUR", "9"))
+ALERT_END_HOUR = int(os.getenv("ALERT_END_HOUR", "17"))
+
 # How many recent bars to scan for trigger events. Covers gaps between
 # scheduled runs (GitHub may delay cron by hours); cooldown dedupes repeats.
 LOOKBACK_BARS = int(os.getenv("LOOKBACK_BARS", "6"))
